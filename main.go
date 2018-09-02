@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
 
@@ -19,10 +20,10 @@ type Tag struct {
 
 // Link ...
 type Link struct {
+	ID          int
 	Link        string
 	Description string
 	Tags        []Tag
-	ID          int
 }
 
 var db *sql.DB
@@ -52,10 +53,27 @@ func (l *Link) insert() {
 	l.ID = int(i)
 }
 
+func allLinks() []Link {
+	rows, err := db.Query("SELECT * FROM links")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	links := []Link{}
+	for rows.Next() {
+		link := new(Link)
+		rows.Scan(&link.ID, &link.Link, &link.Description)
+		fmt.Printf("LINK %v \n", link)
+		links = append(links, *link)
+	}
+
+	return links
+}
+
 // NewLink ...
 func NewLink(w http.ResponseWriter, r *http.Request) {
 	fp := path.Join("templates", "links", "new.html")
-	link := Link{}
+	// link := Link{}
 
 	tmpl, err := template.ParseFiles(fp)
 	if err != nil {
@@ -63,7 +81,8 @@ func NewLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := tmpl.Execute(w, link); err != nil {
+	links := allLinks()
+	if err := tmpl.Execute(w, links); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

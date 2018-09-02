@@ -32,6 +32,9 @@
 
       <button class="btn btn-primary" type="submit">Save</button>
     </form>
+    {{ range . }}
+      <div>{{ .ID }} - <a href="{{ .Link }}"> {{ .Description }} </a> </div>
+    {{ end }}
   </div>
 </body>
 </html>
