@@ -1,7 +1,10 @@
 package main
 
 import (
-	"fmt"
+	"database/sql"
+
+	_ "github.com/go-sql-driver/mysql"
+
 	"html/template"
 	"log"
 	"net/http"
@@ -16,9 +19,37 @@ type Tag struct {
 
 // Link ...
 type Link struct {
-	Name        string
+	Link        string
 	Description string
 	Tags        []Tag
+	ID          int
+}
+
+var db *sql.DB
+
+func init() {
+	var err error
+	db, err = sql.Open("mysql", "root:hassan@/links_aggregator")
+	if err != nil {
+		log.Fatal("hello", err.Error())
+	}
+
+	if err = db.Ping(); err != nil {
+		log.Fatal("world", err.Error())
+	}
+}
+
+func (l *Link) insert() {
+	result, err := db.Exec("INSERT INTO links (Link, Description) VALUES(?, ?)", l.Link, l.Description)
+
+	if err != nil {
+		log.Fatal("Cong", err.Error())
+		return
+	}
+
+	i, _ := result.LastInsertId()
+
+	l.ID = int(i)
 }
 
 // NewLink ...
@@ -48,8 +79,10 @@ func CreateLink(w http.ResponseWriter, r *http.Request) {
 	for _, t := range rawTags {
 		tags = append(tags, Tag{t})
 	}
-	link := Link{form.Get("Name"), form.Get("Description"), tags}
-	fmt.Printf("%v", link)
+
+	link := Link{Link: form.Get("Link"), Description: form.Get("Description"), Tags: tags}
+	link.insert()
+	http.Redirect(w, r, "/new", 301)
 }
 
 // ListLinks ...
@@ -58,6 +91,8 @@ func ListLinks(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	defer db.Close()
+
 	http.HandleFunc("/new", NewLink)
 	http.HandleFunc("/create", CreateLink)
 	http.HandleFunc("/list", ListLinks)
