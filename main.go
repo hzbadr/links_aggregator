@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
 
@@ -47,7 +46,7 @@ func allLinks() []Link {
 	for rows.Next() {
 		link := new(Link)
 		rows.Scan(&link.ID, &link.Link, &link.Description)
-		fmt.Printf("LINK %v \n", link)
+
 		links = append(links, *link)
 	}
 
